@@ -17,7 +17,7 @@
         .flex-row { display: flex; gap: 5px; }
         .student-row { display: flex; justify-content: space-between; align-items: center; background: #e8f5e9; padding: 8px; margin-bottom: 5px; border-radius: 5px;}
         .student-row input { width: 70px; margin: 0; padding: 5px; text-align: center;}
-        .info-box { background: #e3f2fd; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 0.9rem; }
+        .info-box { background: #e3f2fd; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 0.9rem; border-left: 5px solid #1976d2; }
         hr { border: 1px solid #eee; margin: 15px 0; }
         .live-badge { background: #d50000; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; vertical-align: top; margin-left: 5px; animation: blink 1.5s infinite;}
         @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0.5;} 100% {opacity: 1;} }
@@ -25,6 +25,7 @@
 </head>
 <body>
 
+<!-- ... (Diğer HTML kısımları aynı kalıyor) ... -->
 <div id="main-menu" class="container">
     <h2>🌟 Sistem Girişi</h2>
     <button class="btn-blue" onclick="show('ybs-login')">⚙️ YBS Girişi</button>
@@ -43,27 +44,34 @@
 
 <div id="ybs-panel" class="container hidden">
     <h2>🛠️ YBS Yönetim Paneli</h2>
-    <h3>👨‍🏫 Öğretmen Ekle</h3>
+    
+    <h3>👨‍🏫 Öğretmen Yönetimi</h3>
     <input type="text" id="ybs-t-user" placeholder="Kullanıcı Adı">
     <input type="password" id="ybs-t-pass" placeholder="Şifre">
     <button onclick="addTeacher()">Öğretmen Kaydet 💾</button>
+    <input type="text" id="ybs-del-t-user" placeholder="Silinecek Öğretmen Kullanıcı Adı">
+    <button class="btn-red" onclick="deleteTeacher()">Öğretmeni Sil ❌</button>
     <hr>
-    <h3>🎓 Öğrenci Ekle</h3>
+
+    <h3>🎓 Öğrenci Yönetimi</h3>
     <select id="ybs-s-class"><option disabled selected value="">Sınıf Seç (1-7)</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option></select>
     <select id="ybs-s-branch"><option disabled selected value="">Şube Seç</option><option value="Gep-Up 1">Gep-Up 1</option><option value="Gep-Up 2">Gep-Up 2</option><option value="Gep-Up 3">Gep-Up 3</option></select>
     <input type="text" id="ybs-s-name" placeholder="Adı Soyadı">
     <input type="number" id="ybs-s-no" placeholder="Numara">
     <input type="text" id="ybs-s-pin" placeholder="Özel 10 Haneli Kod">
     <button onclick="addStudent()">Öğrenci Kaydet 💾</button>
+    <input type="number" id="ybs-del-no" placeholder="Silinecek Öğrenci Numarası">
+    <button class="btn-red" onclick="deleteStudent()">Öğrenciyi Sil ❌</button>
     <hr>
+
     <h3>📅 Devamsızlık İşle</h3>
     <input type="number" id="ybs-att-no" placeholder="Öğrenci Numarası">
-    <button class="btn-blue" onclick="searchStudentAttendance()">Öğrenci Sorgula 🔍</button>
+    <button class="btn-blue" onclick="searchStudentAttendance()">Sorgula 🔍</button>
     <div id="ybs-att-result" class="hidden">
         <div class="info-box" id="ybs-att-info"></div>
-        <div class="flex-row" style="margin-top:5px;">
-            <button class="btn-red" onclick="updateAttendance('ozursuz')">Özürsüz İşle</button>
-            <button class="btn-blue" onclick="updateAttendance('ozurlu')">Özürlü İşle</button>
+        <div class="flex-row" style="margin-top:10px;">
+            <button class="btn-red" onclick="updateAttendance('ozursuz')">[Özürsüz İşle]</button>
+            <button class="btn-blue" onclick="updateAttendance('ozurlu')">[Özürlü İşle]</button>
         </div>
     </div>
     <button class="btn-red" style="margin-top:20px" onclick="show('main-menu')">Çıkış Yap 🚪</button>
@@ -112,7 +120,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, child, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, child, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyASb6aRHntgSacKMKCZ_kMxv2j78RLotiw",
@@ -139,11 +147,23 @@
         } else alert('Hatalı Giriş!');
     };
 
+    // --- ÖĞRETMEN VE ÖĞRENCİ İŞLEMLERİ ---
     window.addTeacher = function() {
         const user = document.getElementById('ybs-t-user').value.trim();
         const pass = document.getElementById('ybs-t-pass').value.trim();
         if(!user || !pass) return alert("Boş alan bırakmayın.");
         set(ref(db, 'ogretmenler/' + user), { sifre: pass }).then(() => { alert(`Öğretmen (${user}) kaydedildi!`); window.clearInputs('ybs-panel'); });
+    };
+
+    window.deleteTeacher = function() {
+        const user = document.getElementById('ybs-del-t-user').value.trim();
+        if(!user) return alert("Lütfen kullanıcı adı girin!");
+        if(!confirm(`${user} kullanıcısı sistemden silinecek. Onaylıyor musun?`)) return;
+        
+        remove(ref(db, 'ogretmenler/' + user)).then(() => {
+            alert("Öğretmen silindi.");
+            document.getElementById('ybs-del-t-user').value = '';
+        }).catch(e => alert("Hata oluştu: " + e.message));
     };
 
     window.addStudent = function() {
@@ -158,6 +178,18 @@
         }).then(() => { alert(`Öğrenci kaydedildi!`); window.clearInputs('ybs-panel'); });
     };
 
+    window.deleteStudent = function() {
+        const no = document.getElementById('ybs-del-no').value.trim();
+        if(!no) return alert("Lütfen öğrenci numarası girin!");
+        if(!confirm(`${no} numaralı öğrenci kalıcı olarak silinecek. Onaylıyor musun?`)) return;
+        
+        remove(ref(db, 'ogrenciler/' + no)).then(() => {
+            alert("Öğrenci sistemden silindi.");
+            document.getElementById('ybs-del-no').value = '';
+        }).catch(e => alert("Hata oluştu: " + e.message));
+    };
+
+    // --- DEVAMSIZLIK İŞLEMLERİ (GÜNCELLENEN KISIM) ---
     let activeStudentNo = null;
     let activeStudentData = null;
 
@@ -167,8 +199,15 @@
             if (s.exists()) {
                 activeStudentNo = no;
                 activeStudentData = s.val();
+                const today = new Date().toLocaleDateString('tr-TR');
+                
                 document.getElementById('ybs-att-result').classList.remove('hidden');
-                document.getElementById('ybs-att-info').innerHTML = `<strong>Öğrenci:</strong> ${activeStudentData.isim}<br><strong>Özürlü:</strong> ${activeStudentData.devamsizlik.ozurlu} gün<br><strong>Özürsüz:</strong> ${activeStudentData.devamsizlik.ozursuz} gün`;
+                document.getElementById('ybs-att-info').innerHTML = `
+                    <div style="font-size:1.1rem; font-weight:bold;">${activeStudentData.isim} (${activeStudentNo})</div>
+                    <div style="font-size:0.8rem; color:#666; margin-bottom:5px;">${today}</div>
+                    <div><strong>Özürsüz:</strong> ${activeStudentData.devamsizlik.ozursuz} gün</div>
+                    <div><strong>Özürlü:</strong> ${activeStudentData.devamsizlik.ozurlu} gün</div>
+                `;
             } else alert("Öğrenci bulunamadı!");
         });
     };
@@ -176,9 +215,13 @@
     window.updateAttendance = function(tip) {
         if(!activeStudentNo) return;
         const yeniDeger = activeStudentData.devamsizlik[tip] + 1;
-        update(ref(db, `ogrenciler/${activeStudentNo}/devamsizlik`), { [tip]: yeniDeger }).then(() => { alert("İşlendi!"); window.searchStudentAttendance(); });
+        update(ref(db, `ogrenciler/${activeStudentNo}/devamsizlik`), { [tip]: yeniDeger }).then(() => { 
+            alert("İşlendi!"); 
+            window.searchStudentAttendance(); 
+        });
     };
 
+    // --- DİĞER FONKSİYONLAR AYNI ---
     window.loginTeacher = function() {
         const user = document.getElementById('teacher-user').value.trim();
         const pass = document.getElementById('teacher-pass').value.trim();
@@ -208,7 +251,6 @@
         });
     };
 
-    // DÜZELTİLEN FONKSİYON: Artık 'push' değil 'set' kullanıyor ve üzerine yazıyor.
     window.saveGrades = function() {
         const lesson = document.getElementById('t-lesson').value;
         const term = document.getElementById('t-term').value;
@@ -219,7 +261,6 @@
             const no = row.getAttribute('data-no');
             const gradeVal = row.querySelector('.grade-input').value.trim();
             if(gradeVal !== '') {
-                // Her ders-dönem-işlem için benzersiz bir ID oluşturur, böylece üzerine yazar (günceller).
                 const uniqueKey = `${lesson}_${term}_${type}`.replace(/ /g, '_').replace(/\./g, '');
                 set(ref(db, `ogrenciler/${no}/notlar/${uniqueKey}`), { ders: lesson, donem: term, islem: type, not: gradeVal });
             }
