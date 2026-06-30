@@ -43,7 +43,7 @@
 
 <div id="ybs-panel" class="container hidden">
     <h2>🛠️ YBS Yönetim Paneli</h2>
-    <button class="btn-red" onclick="show('main-menu')">Çıkış Yap 🚪</button>
+    <button class="btn-red" onclick="logoutYBS()">Çıkış Yap 🚪</button>
     <hr>
     <h3>🎓 Öğrenci Yönetimi</h3>
     <select id="ybs-s-class"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option></select>
@@ -72,7 +72,7 @@
     
     <div id="teacher-student-list" style="margin-top:10px;"></div>
     <button onclick="saveGrades()">Tümünü Kaydet/Güncelle 💾</button>
-    <button class="btn-red" onclick="show('main-menu')">Çıkış ❌</button>
+    <button class="btn-red" onclick="logoutTeacher()">Güvenli Çıkış ❌</button>
 </div>
 
 <div id="vbs-login" class="container hidden">
@@ -80,11 +80,20 @@
     <input type="number" id="vbs-no" placeholder="Okul No">
     <input type="password" id="vbs-kod" placeholder="Özel Kod">
     <button onclick="loginVBS()">Giriş ✔️</button>
+    <button class="btn-red" onclick="show('main-menu')">Geri 🔙</button>
+</div>
+
+<div id="vbs-panel" class="container hidden">
+    <h2>📊 Veli Bilgilendirme <span class="live-badge">CANLI</span></h2>
+    <div id="vbs-student-name" style="font-weight:bold; color:#004d40; margin-bottom:10px;"></div>
+    <h3>📝 Not Bilgileri</h3>
+    <div id="vbs-grades" style="background: #e3f2fd; padding: 10px; border-radius: 5px; white-space: pre-line;">Yükleniyor...</div>
+    <button class="btn-red" style="margin-top:15px;" onclick="logoutVBS()">Güvenli Çıkış 🚪</button>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, child, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, child, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyASb6aRHntgSacKMKCZ_kMxv2j78RLotiw",
@@ -93,11 +102,31 @@
     };
 
     const db = getDatabase(initializeApp(firebaseConfig));
+    let vbsListener = null;
 
     // --- YARDIMCI ---
     window.show = (id) => { document.querySelectorAll('.container').forEach(e => e.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); };
 
-    // --- ÖĞRENCİ VE ÖĞRETMEN YÖNETİMİ ---
+    // --- YBS İŞLEMLERİ ---
+    window.loginYBS = () => { 
+        if(document.getElementById('ybs-kurum').value == '76') {
+            window.show('ybs-panel'); 
+        } else {
+            alert("Hatalı Giriş!"); 
+        }
+    };
+
+    window.logoutYBS = () => {
+        // YBS giriş bilgilerini ve formu temizle
+        document.getElementById('ybs-kurum').value = '';
+        document.getElementById('ybs-kod').value = '';
+        document.getElementById('ybs-pass').value = '';
+        document.getElementById('ybs-s-name').value = '';
+        document.getElementById('ybs-s-no').value = '';
+        document.getElementById('ybs-s-pin').value = '';
+        window.show('main-menu');
+    };
+
     window.addStudent = () => {
         const no = document.getElementById('ybs-s-no').value;
         set(ref(db, 'ogrenciler/' + no), {
@@ -106,18 +135,39 @@
             isim: document.getElementById('ybs-s-name').value,
             no: no,
             kod: document.getElementById('ybs-s-pin').value
-        }).then(() => alert("Kaydedildi"));
+        }).then(() => {
+            alert("Öğrenci Kaydedildi");
+            document.getElementById('ybs-s-name').value = '';
+            document.getElementById('ybs-s-no').value = '';
+            document.getElementById('ybs-s-pin').value = '';
+        });
     };
 
+    // --- ÖĞRETMEN İŞLEMLERİ ---
     window.loginTeacher = () => {
         const user = document.getElementById('teacher-user').value;
         get(child(ref(db), `ogretmenler/${user}`)).then(s => {
             if(s.exists()) window.show('teacher-panel');
-            else alert("Hatalı!");
+            else alert("Hatalı Kullanıcı Adı veya Şifre!");
         });
     };
 
-    // --- NOT YÖNETİMİ (KİLİT NOKTA) ---
+    window.logoutTeacher = () => {
+        // Öğretmen giriş bilgilerini ve not formunu temizle
+        document.getElementById('teacher-user').value = '';
+        document.getElementById('teacher-pass').value = '';
+        document.getElementById('teacher-student-list').innerHTML = '';
+        
+        // Seçim kutularını (Dropdown) başa döndür
+        document.getElementById('t-class').selectedIndex = 0;
+        document.getElementById('t-branch').selectedIndex = 0;
+        document.getElementById('t-lesson').selectedIndex = 0;
+        document.getElementById('t-term').selectedIndex = 0;
+        document.getElementById('t-type').selectedIndex = 0;
+        
+        window.show('main-menu');
+    };
+
     window.filterStudents = async () => {
         const cl = document.getElementById('t-class').value;
         const br = document.getElementById('t-branch').value;
@@ -129,7 +179,7 @@
 
         const uniqueKey = `${le}_${te}_${ty}`.replace(/ /g, '_');
         const listDiv = document.getElementById('teacher-student-list');
-        listDiv.innerHTML = 'Yükleniyor...';
+        listDiv.innerHTML = 'Öğrenciler yükleniyor...';
 
         const snap = await get(child(ref(db), 'ogrenciler'));
         listDiv.innerHTML = '';
@@ -139,7 +189,7 @@
                 const st = child.val();
                 if(st.sinif == cl && st.sube == br){
                     const val = (st.notlar && st.notlar[uniqueKey]) ? st.notlar[uniqueKey].not : '';
-                    listDiv.innerHTML += `<div class="student-row" data-no="${st.no}"><span>${st.isim}</span><input type="number" class="grade-input" value="${val}" placeholder="0-100"></div>`;
+                    listDiv.innerHTML += `<div class="student-row" data-no="${st.no}"><span>${st.no} - ${st.isim}</span><input type="number" class="grade-input" value="${val}" placeholder="0-100"></div>`;
                 }
             });
         }
@@ -156,18 +206,54 @@
             const val = row.querySelector('.grade-input').value;
             const refPath = `ogrenciler/${no}/notlar/${uniqueKey}`;
             
-            // Eğer kutucuk doluysa kaydet, boşsa (silmek istiyorsan) notu kaldır
             if(val !== '') {
                 set(ref(db, refPath), { ders: le, donem: te, islem: ty, not: val });
             } else {
                 remove(ref(db, refPath));
             }
         });
-        alert("İşlem tamamlandı!");
+        alert("İşlem tamamlandı! Notlar kaydedildi.");
     };
 
-    window.loginYBS = () => { if(document.getElementById('ybs-kurum').value == '76') window.show('ybs-panel'); else alert("Hata"); };
-    window.loginVBS = () => { /* VBS kodun aynı kalabilir */ alert("VBS Aktif"); };
+    // --- VBS İŞLEMLERİ ---
+    window.loginVBS = () => {
+        const no = document.getElementById('vbs-no').value.trim();
+        const pin = document.getElementById('vbs-kod').value.trim();
+        get(child(ref(db), `ogrenciler/${no}`)).then((s) => {
+            if (s.exists() && s.val().kod === pin) {
+                window.show('vbs-panel');
+                if(vbsListener) vbsListener(); // Varsa eski dinleyiciyi kapat
+                
+                // Anlık veri dinlemeyi başlat (Canlı Not Akışı)
+                vbsListener = onValue(ref(db, `ogrenciler/${no}`), (snap) => {
+                    const st = snap.val();
+                    document.getElementById('vbs-student-name').innerText = `🎓 ${st.isim} (${st.no})`;
+                    const gDiv = document.getElementById('vbs-grades'); 
+                    gDiv.innerHTML = '';
+                    
+                    if(st.notlar) {
+                        Object.values(st.notlar).forEach(g => {
+                            gDiv.innerHTML += `<p><strong>[${g.donem}] ${g.ders} (${g.islem}):</strong> ${g.not}</p>`;
+                        });
+                    } else {
+                        gDiv.innerHTML = "Sisteme girilmiş not bulunmuyor.";
+                    }
+                });
+            } else {
+                alert("Okul Numarası veya Özel Kod Hatalı!");
+            }
+        });
+    };
+
+    window.logoutVBS = () => {
+        if(vbsListener) vbsListener(); // Firebase bağlantısını kes (Veri tasarrufu için)
+        // VBS formunu temizle
+        document.getElementById('vbs-no').value = '';
+        document.getElementById('vbs-kod').value = '';
+        document.getElementById('vbs-student-name').innerText = '';
+        document.getElementById('vbs-grades').innerHTML = 'Yükleniyor...';
+        window.show('main-menu');
+    };
 </script>
 </body>
 </html>
