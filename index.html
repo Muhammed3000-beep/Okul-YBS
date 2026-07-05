@@ -13,6 +13,7 @@
         button { width: 100%; padding: 12px; background: #00796b; color: white; border: none; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: pointer;}
         .btn-red { background: #d32f2f; }
         .btn-blue { background: #1976d2; }
+        .btn-orange { background: #e65100; }
         .hidden { display: none; }
         .flex-row { display: flex; gap: 5px; }
         .student-row { display: flex; justify-content: space-between; align-items: center; background: #e8f5e9; padding: 8px; margin-bottom: 5px; border-radius: 5px;}
@@ -47,7 +48,7 @@
     <hr>
     
     <h3>👨‍🏫 Öğretmen Yönetimi</h3>
-    <input type="text" id="ybs-t-user" placeholder="Öğretmen Kullanıcı Adı">
+    <input type="text" id="ybs-t-user" placeholder="Öğretmen Kullanıcı Adı (Nokta, boşluk kullanmayın)">
     <input type="password" id="ybs-t-pass" placeholder="Öğretmen Giriş Şifresi">
     <button onclick="addTeacher()">Öğretmen Kaydet 💾</button>
     
@@ -58,7 +59,7 @@
     <select id="ybs-s-branch"><option value="Gep-Up 1">Gep-Up 1</option><option value="Gep-Up 2">Gep-Up 2</option><option value="Gep-Up 3">Gep-Up 3</option></select>
     <input type="text" id="ybs-s-name" placeholder="Adı Soyadı">
     <input type="number" id="ybs-s-no" placeholder="Numara">
-    <input type="text" id="ybs-s-pin" placeholder="Özel Kod">
+    <input type="text" id="ybs-s-pin" placeholder="Özel Kod (VBS için)">
     <button onclick="addStudent()">Öğrenci Kaydet 💾</button>
 </div>
 
@@ -71,8 +72,15 @@
 </div>
 
 <div id="teacher-panel" class="container hidden">
-    <h2>📝 Not Giriş Paneli</h2>
+    <h2>📝 Öğretmen Paneli</h2>
     
+    <select id="t-mode" onchange="changeTeacherMode()" style="background-color: #fff3e0; border-color: #ff9800; font-weight: bold;">
+        <option value="not">📝 Not Girişi Yap</option>
+        <option value="devamsizlik">📅 Devamsızlık Girişi Yap</option>
+    </select>
+    
+    <hr>
+
     <select id="t-class" onchange="filterStudents()">
         <option disabled selected value="">Sınıf Seç</option>
         <option value="1">1</option><option value="2">2</option><option value="3">3</option>
@@ -84,31 +92,33 @@
         <option value="Gep-Up 1">Gep-Up 1</option><option value="Gep-Up 2">Gep-Up 2</option><option value="Gep-Up 3">Gep-Up 3</option>
     </select>
     
-    <select id="t-lesson" onchange="filterStudents()">
-        <option disabled selected value="">Ders Seç</option>
-        <option value="Matematik">Matematik</option>
-        <option value="Türkçe">Türkçe</option>
-        <option value="İngilizce">İngilizce</option>
-        <option value="Beden Eğitimi">Beden Eğitimi</option>
-    </select>
-    
-    <select id="t-term" onchange="filterStudents()">
-        <option disabled selected value="">Dönem Seç</option>
-        <option value="1. Dönem">1. Dönem</option>
-        <option value="2. Dönem">2. Dönem</option>
-        <option value="3. Dönem">3. Dönem</option>
-    </select>
-    
-    <select id="t-type" onchange="filterStudents()">
-        <option disabled selected value="">Not Tipi Seç</option>
-        <option value="Sınav">Sınav</option>
-        <option value="Ders İçi Katılım">Ders İçi Katılım</option>
-        <option value="Proje">Proje</option>
-        <option value="Sözlü">Sözlü</option>
-    </select>
+    <div id="not-secimleri">
+        <select id="t-lesson" onchange="filterStudents()">
+            <option disabled selected value="">Ders Seç</option>
+            <option value="Matematik">Matematik</option>
+            <option value="Türkçe">Türkçe</option>
+            <option value="İngilizce">İngilizce</option>
+            <option value="Beden Eğitimi">Beden Eğitimi</option>
+        </select>
+        
+        <select id="t-term" onchange="filterStudents()">
+            <option disabled selected value="">Dönem Seç</option>
+            <option value="1. Dönem">1. Dönem</option>
+            <option value="2. Dönem">2. Dönem</option>
+            <option value="3. Dönem">3. Dönem</option>
+        </select>
+        
+        <select id="t-type" onchange="filterStudents()">
+            <option disabled selected value="">Not Tipi Seç</option>
+            <option value="Sınav">Sınav</option>
+            <option value="Ders İçi Katılım">Ders İçi Katılım</option>
+            <option value="Proje">Proje</option>
+            <option value="Sözlü">Sözlü</option>
+        </select>
+    </div>
     
     <div id="teacher-student-list" style="margin-top:10px;"></div>
-    <button onclick="saveGrades()">Tümünü Kaydet/Güncelle 💾</button>
+    <button class="btn-orange" onclick="saveData()">Tümünü Kaydet/Güncelle 💾</button>
     <button class="btn-red" onclick="logoutTeacher()">Güvenli Çıkış ❌</button>
 </div>
 
@@ -123,8 +133,15 @@
 <div id="vbs-panel" class="container hidden">
     <h2>📊 Veli Bilgilendirme <span class="live-badge">CANLI</span></h2>
     <div id="vbs-student-name" style="font-weight:bold; color:#004d40; margin-bottom:10px;"></div>
+    
+    <h3>📅 Devamsızlık Durumu</h3>
+    <div id="vbs-attendance" style="background: #fff3e0; padding: 10px; border-radius: 5px; margin-bottom: 10px; color: #d84315; font-weight: bold;">
+        Yükleniyor...
+    </div>
+
     <h3>📝 Not Bilgileri</h3>
     <div id="vbs-grades" style="background: #e3f2fd; padding: 10px; border-radius: 5px; white-space: pre-line;">Yükleniyor...</div>
+    
     <button class="btn-red" style="margin-top:15px;" onclick="logoutVBS()">Güvenli Çıkış 🚪</button>
 </div>
 
@@ -160,168 +177,10 @@
         document.getElementById('ybs-kurum').value = '';
         document.getElementById('ybs-kod').value = '';
         document.getElementById('ybs-pass').value = '';
-        document.getElementById('ybs-t-user').value = '';
-        document.getElementById('ybs-t-pass').value = '';
-        document.getElementById('ybs-s-name').value = '';
-        document.getElementById('ybs-s-no').value = '';
-        document.getElementById('ybs-s-pin').value = '';
         window.show('main-menu');
     };
 
-    // YENİ: Öğretmen Veri Tabanına Kayıt Fonksiyonu
+    // HATA DÜZELTİLDİ: Öğretmen kayıt olurken Firebase'i çökerten karakterleri temizliyoruz.
     window.addTeacher = () => {
-        const user = document.getElementById('ybs-t-user').value.trim();
-        const pass = document.getElementById('ybs-t-pass').value.trim();
-
-        if(!user || !pass) {
-            alert("Lütfen öğretmen kullanıcı adı ve şifresini doldurun!");
-            return;
-        }
-
-        set(ref(db, 'ogretmenler/' + user), {
-            kullaniciAdi: user,
-            sifre: pass
-        }).then(() => {
-            alert("Öğretmen Başarıyla Kaydedildi! Artık bu hesapla giriş yapabilirsiniz.");
-            document.getElementById('ybs-t-user').value = '';
-            document.getElementById('ybs-t-pass').value = '';
-        }).catch(err => alert("Hata: " + err.message));
-    };
-
-    window.addStudent = () => {
-        const no = document.getElementById('ybs-s-no').value;
-        set(ref(db, 'ogrenciler/' + no), {
-            sinif: document.getElementById('ybs-s-class').value,
-            sube: document.getElementById('ybs-s-branch').value,
-            isim: document.getElementById('ybs-s-name').value,
-            no: no,
-            kod: document.getElementById('ybs-s-pin').value
-        }).then(() => {
-            alert("Öğrenci Kaydedildi");
-            document.getElementById('ybs-s-name').value = '';
-            document.getElementById('ybs-s-no').value = '';
-            document.getElementById('ybs-s-pin').value = '';
-        });
-    };
-
-    // --- ÖĞRETMEN KODLARI ---
-    window.loginTeacher = () => {
-        const user = document.getElementById('teacher-user').value.trim();
-        const pass = document.getElementById('teacher-pass').value.trim();
-
-        if(!user || !pass) {
-            alert("Lütfen alanları doldurun!");
-            return;
-        }
-
-        get(child(ref(db), `ogretmenler/${user}`)).then(s => {
-            // Hem öğretmen var mı diye bakıyor hem de YBS'de girilen şifreyi doğruluyor
-            if(s.exists() && s.val().sifre === pass) {
-                window.show('teacher-panel');
-            } else {
-                alert("Hatalı Kullanıcı Adı veya Şifre! (Önce YBS panelinden öğretmeni eklediğinizden emin olun.)");
-            }
-        }).catch(() => alert("Giriş yapılırken bir hata oluştu."));
-    };
-
-    window.logoutTeacher = () => {
-        document.getElementById('teacher-user').value = '';
-        document.getElementById('teacher-pass').value = '';
-        document.getElementById('teacher-student-list').innerHTML = '';
-        
-        document.getElementById('t-class').selectedIndex = 0;
-        document.getElementById('t-branch').selectedIndex = 0;
-        document.getElementById('t-lesson').selectedIndex = 0;
-        document.getElementById('t-term').selectedIndex = 0;
-        document.getElementById('t-type').selectedIndex = 0;
-        
-        window.show('main-menu');
-    };
-
-    window.filterStudents = async () => {
-        const cl = document.getElementById('t-class').value;
-        const br = document.getElementById('t-branch').value;
-        const le = document.getElementById('t-lesson').value;
-        const te = document.getElementById('t-term').value;
-        const ty = document.getElementById('t-type').value;
-
-        if(!cl || !br || !le || !te || !ty) return;
-
-        const uniqueKey = `${le}_${te}_${ty}`.replace(/ /g, '_').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c');
-        const listDiv = document.getElementById('teacher-student-list');
-        listDiv.innerHTML = 'Öğrenciler yükleniyor...';
-
-        const snap = await get(child(ref(db), 'ogrenciler'));
-        listDiv.innerHTML = '';
-        
-        if(snap.exists()){
-            snap.forEach(child => {
-                const st = child.val();
-                if(st.sinif == cl && st.sube == br){
-                    const val = (st.notlar && st.notlar[uniqueKey]) ? st.notlar[uniqueKey].not : '';
-                    listDiv.innerHTML += `<div class="student-row" data-no="${st.no}"><span>${st.no} - ${st.isim}</span><input type="number" class="grade-input" value="${val}" placeholder="0-100"></div>`;
-                }
-            });
-        }
-    };
-
-    window.saveGrades = () => {
-        const le = document.getElementById('t-lesson').value;
-        const te = document.getElementById('t-term').value;
-        const ty = document.getElementById('t-type').value;
-        const uniqueKey = `${le}_${te}_${ty}`.replace(/ /g, '_').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c');
-
-        document.querySelectorAll('.student-row').forEach(row => {
-            const no = row.getAttribute('data-no');
-            const val = row.querySelector('.grade-input').value;
-            const refPath = `ogrenciler/${no}/notlar/${uniqueKey}`;
-            
-            if(val !== '') {
-                set(ref(db, refPath), { ders: le, donem: te, islem: ty, not: val });
-            } else {
-                remove(ref(db, refPath));
-            }
-        });
-        alert("İşlem tamamlandı! Notlar kaydedildi.");
-    };
-
-    // --- VBS KODLARI ---
-    window.loginVBS = () => {
-        const no = document.getElementById('vbs-no').value.trim();
-        const pin = document.getElementById('vbs-kod').value.trim();
-        get(child(ref(db), `ogrenciler/${no}`)).then((s) => {
-            if (s.exists() && s.val().kod === pin) {
-                window.show('vbs-panel');
-                if(vbsListener) vbsListener();
-                
-                vbsListener = onValue(ref(db, `ogrenciler/${no}`), (snap) => {
-                    const st = snap.val();
-                    document.getElementById('vbs-student-name').innerText = `🎓 ${st.isim} (${st.no})`;
-                    const gDiv = document.getElementById('vbs-grades'); 
-                    gDiv.innerHTML = '';
-                    
-                    if(st.notlar) {
-                        Object.values(st.notlar).forEach(g => {
-                            gDiv.innerHTML += `<p><strong>[${g.donem}] ${g.ders} (${g.islem}):</strong> ${g.not}</p>`;
-                        });
-                    } else {
-                        gDiv.innerHTML = "Sisteme girilmiş not bulunmuyor.";
-                    }
-                });
-            } else {
-                alert("Okul Numarası veya Özel Kod Hatalı!");
-            }
-        });
-    };
-
-    window.logoutVBS = () => {
-        if(vbsListener) vbsListener();
-        document.getElementById('vbs-no').value = '';
-        document.getElementById('vbs-kod').value = '';
-        document.getElementById('vbs-student-name').innerText = '';
-        document.getElementById('vbs-grades').innerHTML = 'Yükleniyor...';
-        window.show('main-menu');
-    };
-</script>
-</body>
-</html>
+        const rawUser = document.getElementById('ybs-t-user').value.trim();
+        const pass = document.getElementById
