@@ -47,7 +47,7 @@
         .student-grade-table input { padding: 4px; font-size: 13px; }
         
         .vbs-report { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e0e0e0; }
-        .vbs-header { font-weight: bold; color: #1a73e8; margin-bottom: 8px; font-size: 14px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; }
+        .vbs-header { font-weight: bold; color: #1a73e8; margin-bottom: 8px; font-size: 14px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; display: flex; justify-content: space-between;}
     </style>
 </head>
 <body>
@@ -293,10 +293,7 @@
             } else {
                 const defaultData = {
                     teachers: { "hoca1": "1234" },
-                    students: {
-                        "101": { no: "101", name: "Ahmet Karaman", sinif: "5", sube: "Gep-Up 1", code: "AAA111AAA1", attendance: [{date:"10.07.2026", type:"Özürlü"}], grades: {} },
-                        "102": { no: "102", name: "Ahmet Samancı", sinif: "5", sube: "Gep-Up 1", code: "BBB222BBB2", attendance: [{date:"11.07.2026", type:"Özürlü"}, {date:"10.07.2026", type:"Özürlü"}], grades: {} }
-                    }
+                    students: {}
                 };
                 set(ref(db), defaultData);
             }
@@ -629,19 +626,27 @@
             let hasGrades = false;
             student.grades = student.grades || {};
             
+            let totalCourseAverageSum = 0;
+            let activeCourseCount = 0;
+            
             dersler.forEach(ders => {
                 let dersHtml = '';
+                let courseGradeSum = 0;
+                let courseGradeCount = 0;
+                
                 donemler.forEach(donem => {
                     let donemHtml = '';
                     yazililar.forEach(yazili => {
                         let islemHtml = '';
                         islemler.forEach(islem => {
                             if(student.grades[ders] && student.grades[ders][donem] && student.grades[ders][donem][yazili] && student.grades[ders][donem][yazili][islem]) {
-                                const score = student.grades[ders][donem][yazili][islem];
-                                if(score !== "") {
+                                const score = parseFloat(student.grades[ders][donem][yazili][islem]);
+                                if(!isNaN(score)) {
                                     islemHtml += `<div style="display:flex; justify-content:space-between; font-size:13px; margin: 2px 0; padding-left: 10px;">
                                         <span>• ${yazili} (${islem}):</span> <strong>${score}</strong>
                                     </div>`;
+                                    courseGradeSum += score;
+                                    courseGradeCount++;
                                 }
                             }
                         });
@@ -656,12 +661,29 @@
                 
                 if(dersHtml) {
                     hasGrades = true;
-                    gradesDiv.innerHTML += `<div class="vbs-report"><div class="vbs-header">${ders}</div>${dersHtml}</div>`;
+                    let courseAvg = (courseGradeSum / courseGradeCount).toFixed(2);
+                    totalCourseAverageSum += parseFloat(courseAvg);
+                    activeCourseCount++;
+                    
+                    gradesDiv.innerHTML += `<div class="vbs-report">
+                        <div class="vbs-header">
+                            <span>${ders}</span>
+                            <span style="color:#c5221f;">Ortalama: ${courseAvg}</span>
+                        </div>
+                        ${dersHtml}
+                    </div>`;
                 }
             });
 
             if(!hasGrades) {
                 gradesDiv.innerHTML = '<p style="color:#666; font-size:13px; margin-top:5px;">Öğrenciye ait kayıtlı not bulunamadı.</p>';
+            } else {
+                let generalAvg = (totalCourseAverageSum / activeCourseCount).toFixed(2);
+                gradesDiv.innerHTML = `
+                <div class="vbs-report" style="background:#e8f0fe; border: 2px solid #1a73e8; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:bold; color:#1a73e8; font-size:15px;">Genel Ortalama:</span>
+                    <strong style="font-size:18px; color:#1a73e8;">${generalAvg}</strong>
+                </div>` + gradesDiv.innerHTML;
             }
 
             const attDiv = document.getElementById('vbsAttendanceContainer');
