@@ -58,7 +58,6 @@
         <button class="nav-btn" onclick="switchPortal('vbs')">VBS</button>
     </div>
 
-    <!-- YBS PORTAL -->
     <div id="ybsPortal" class="portal-root">
         <div id="ybsLogin" class="panel active">
             <h2>YBS Kurumsal Giriş</h2>
@@ -153,7 +152,6 @@
         </div>
     </div>
 
-    <!-- ÖĞRETMEN PORTAL -->
     <div id="ogretmenPortal" class="portal-root" style="display:none;">
         <div id="teacherLogin" class="panel active">
             <h2>Öğretmen Girişi</h2>
@@ -233,7 +231,6 @@
         </div>
     </div>
 
-    <!-- VBS PORTAL -->
     <div id="vbsPortal" class="portal-root" style="display:none;">
         <div id="vbsLogin" class="panel active">
             <h2>Veli Bilgi Sistemi (VBS)</h2>
@@ -329,7 +326,6 @@
             if(type === 'ybs') {
                 document.getElementById('ybsDashboard').classList.remove('active');
                 document.getElementById('ybsLogin').classList.add('active');
-                // Çıkış yapıldığında şifreleri temizle (Telefonda kayıtlı kalmasın)
                 document.getElementById('ybsKurum').value = '';
                 document.getElementById('ybsUser').value = '';
                 document.getElementById('ybsPass').value = '';
@@ -465,7 +461,6 @@
                 `;
             });
 
-            // Özürlü ve Özürsüz eklemek için iki ayrı buton eklendi
             resDiv.innerHTML = `
                 <div class="result-row" style="flex-direction:column; align-items:stretch; gap:10px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:5px;">
@@ -483,7 +478,6 @@
             `;
         };
 
-        // Hem özürlü hem özürsüz durumları kaydetmek için fonksiyon tek fonksiyonda birleştirildi
         window.addAbsence = function(no, type) {
             if(window.dataStore.students[no]) {
                 const today = new Date();
@@ -497,7 +491,7 @@
                 });
                 
                 window.syncDB();
-                window.searchStudentAbsence(); // Listeyi otomatik yenile
+                window.searchStudentAbsence(); 
             }
         };
 
@@ -662,24 +656,20 @@
                 
                 if(dersHtml) {
                     hasGrades = true;
-                    gradesDiv.innerHTML += `
-                        <div class="vbs-report">
-                            <div class="vbs-header">📚 ${ders}</div>
-                            ${dersHtml}
-                        </div>
-                    `;
+                    gradesDiv.innerHTML += `<div class="vbs-report"><div class="vbs-header">${ders}</div>${dersHtml}</div>`;
                 }
             });
-            
+
             if(!hasGrades) {
-                gradesDiv.innerHTML = '<p style="color:#666; font-size:13px; margin-bottom:15px;">Henüz not girişi yapılmamıştır.</p>';
+                gradesDiv.innerHTML = '<p style="color:#666; font-size:13px; margin-top:5px;">Öğrenciye ait kayıtlı not bulunamadı.</p>';
             }
-            
+
             const attDiv = document.getElementById('vbsAttendanceContainer');
             attDiv.innerHTML = '';
+            const attendanceList = student.attendance || [];
             
-            if(student.attendance && student.attendance.length > 0) {
-                student.attendance.forEach(att => {
+            if(attendanceList.length > 0) {
+                attendanceList.forEach(att => {
                     attDiv.innerHTML += `
                         <div class="attendance-item">
                             <span>${att.date}</span>
@@ -688,7 +678,7 @@
                     `;
                 });
             } else {
-                attDiv.innerHTML = '<p style="color:#666; font-size:13px;">Devamsızlık kaydı bulunmuyor.</p>';
+                attDiv.innerHTML = '<p style="color:#666; font-size:13px; margin-top:5px;">Öğrencinin devamsızlık kaydı bulunmuyor.</p>';
             }
         };
     </script>
